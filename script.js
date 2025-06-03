@@ -26,5 +26,5 @@ video.addEventListener('play', () => {
 });
 
 Promise.all([
-  faceapi.nets.tinyFaceDetector.loadFromUri('/models')
+  faceapi.nets.tinyFaceDetector.loadFromUri('models')
 ]).then(setupCamera);
