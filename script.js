@@ -1,30 +1,41 @@
 const video = document.getElementById('video');
+const canvas = document.getElementById('overlay');
 
-async function setupCamera() {
+async function startVideo() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
+      video: {
+        facingMode: 'user',
+      }
     });
     video.srcObject = stream;
   } catch (err) {
-    console.error("Camera access denied:", err);
+    console.error('Error accessing webcam:', err);
   }
 }
 
-video.addEventListener('play', () => {
-  const canvas = document.getElementById('overlay');
-  const displaySize = { width: video.videoWidth, height: video.videoHeight };
+async function loadModels() {
+  await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+  await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+  await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+
+  console.log('Models loaded');
+}
+
+async function detectFaces() {
+  const displaySize = { width: video.width, height: video.height };
   faceapi.matchDimensions(canvas, displaySize);
 
   setInterval(async () => {
-    const detections = await faceapi.detectAllFaces(video);
-    const resized = faceapi.resizeResults(detections, displaySize);
+    const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks().withFaceDescriptors();
+    const resizedDetections = faceapi.resizeResults(detections, displaySize);
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    faceapi.draw.drawDetections(canvas, resized);
+    faceapi.draw.drawDetections(canvas, resizedDetections);
+    faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
   }, 100);
-});
+}
 
-Promise.all([
-  faceapi.nets.tinyFaceDetector.loadFromUri('/models')
-]).then(setupCamera);
+video.addEventListener('play', detectFaces);
+
+loadModels().then(startVideo);
