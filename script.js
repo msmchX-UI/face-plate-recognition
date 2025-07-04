@@ -1,13 +1,11 @@
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
-const selectFrontCamera = document.getElementById('selectFrontCamera');
-const selectBackCamera = document.getElementById('selectBackCamera');
 
-// Function to request camera access based on the selected facingMode
-function requestCameraPermission(facingMode) {
+// Function to start the back camera directly
+function startBackCamera() {
     navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode } // 'user' for front camera, 'environment' for back camera
+        video: { facingMode: 'environment' } // 'environment' for back camera
     }).then(stream => {
         video.srcObject = stream;
         video.onloadedmetadata = () => {
@@ -21,14 +19,8 @@ function requestCameraPermission(facingMode) {
     });
 }
 
-// Event listeners for camera selection buttons
-selectFrontCamera.addEventListener('click', () => {
-    requestCameraPermission('user'); // Front-facing camera
-});
-
-selectBackCamera.addEventListener('click', () => {
-    requestCameraPermission('environment'); // Rear-facing camera
-});
+// Start the back camera immediately
+startBackCamera();
 
 // Load face-api.js models
 Promise.all([
