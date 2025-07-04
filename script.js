@@ -2,36 +2,42 @@ const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
 
-// Function to start the back camera after explicit confirmation
+// Function to start the back camera
 function startCamera() {
-    const confirmPermission = confirm("This site needs access to your camera to function. Do you want to allow camera access?");
-    if (confirmPermission) {
-        navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' } // 'environment' for back camera
-        }).then(stream => {
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play();
-                overlay.width = video.videoWidth;
-                overlay.height = video.videoHeight;
-            };
-        }).catch(error => {
-            console.error('Error accessing the camera:', error);
-            alert('Camera access failed. Please check browser permissions or HTTPS setup.');
-        });
-    } else {
-        alert("Camera access denied. You won't be able to use this feature.");
-    }
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' } // Back camera
+    }).then(stream => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            video.play();
+            overlay.width = video.videoWidth;
+            overlay.height = video.videoHeight;
+            detectFaces(); // Start face detection
+        };
+    }).catch(error => {
+        console.error('Error accessing the camera:', error);
+        alert('Camera access failed. Please check browser permissions or HTTPS setup.');
+    });
 }
 
-// Start the camera immediately with a permission request
-startCamera();
+// Function to detect faces
+async function detectFaces() {
+    const displaySize = { width: video.videoWidth, height: video.videoHeight };
+    faceapi.matchDimensions(overlay, displaySize);
 
-// Load face-api.js models
-Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-    faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-]).then(() => {
-    console.log('Face-api.js models loaded successfully');
-});
+    video.addEventListener('play', () => {
+        setInterval(async () => {
+            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptors();
+
+            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+            ctx.clearRect(0, 0, overlay.width, overlay.height); // Clear the canvas
+            faceapi.draw.drawDetections(overlay, resizedDetections); // Draw detection box
+            faceapi.draw.drawFaceLandmarks(overlay, resizedDetections); // Draw landmarks
+        }, 100); // Every 100ms
+    });
+}
+
+// Start the camera immediately
+startCamera();
