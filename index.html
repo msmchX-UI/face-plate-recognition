@@ -2,12 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Camera Recognition</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <h1>Camera Recognition</h1>
+  
+  <!-- Buttons to select front or back camera -->
+  <div>
+    <button id="frontCameraBtn">Use Front Camera</button>
+    <button id="backCameraBtn">Use Back Camera</button>
+  </div>
+  
+  <!-- Video and canvas elements -->
   <video id="video" autoplay muted playsinline></video>
   <canvas id="overlay"></canvas>
 
