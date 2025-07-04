@@ -1,19 +1,33 @@
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const ctx = overlay.getContext('2d');
+const frontCameraBtn = document.getElementById('frontCameraBtn');
+const backCameraBtn = document.getElementById('backCameraBtn');
 
-// Set up the video and canvas dimensions
-navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'user' } // Use 'environment' for rear camera
-}).then(stream => {
-    video.srcObject = stream;
-    video.onloadedmetadata = () => {
-        video.play();
-        overlay.width = video.videoWidth;
-        overlay.height = video.videoHeight;
-    };
-}).catch(error => {
-    console.error('Error accessing the camera:', error);
+// Function to start the camera with the specified facingMode
+function startCamera(facingMode) {
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facingMode } // 'user' for front, 'environment' for back
+    }).then(stream => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+            video.play();
+            overlay.width = video.videoWidth;
+            overlay.height = video.videoHeight;
+        };
+    }).catch(error => {
+        console.error('Error accessing the camera:', error);
+        alert('Could not access the camera. Please check permissions.');
+    });
+}
+
+// Event listeners for button clicks
+frontCameraBtn.addEventListener('click', () => {
+    startCamera('user'); // Front-facing camera
+});
+
+backCameraBtn.addEventListener('click', () => {
+    startCamera('environment'); // Rear-facing camera
 });
 
 // Load face-api.js models
@@ -21,22 +35,6 @@ Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
     faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-]).then(startRecognition);
-
-function startRecognition() {
-    video.addEventListener('play', () => {
-        const displaySize = { width: video.videoWidth, height: video.videoHeight };
-        faceapi.matchDimensions(overlay, displaySize);
-
-        setInterval(async () => {
-            const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-
-            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-            ctx.clearRect(0, 0, overlay.width, overlay.height);
-            faceapi.draw.drawDetections(overlay, resizedDetections);
-            faceapi.draw.drawFaceLandmarks(overlay, resizedDetections);
-        }, 100);
-    });
-}
+]).then(() => {
+    console.log('Face-api.js models loaded successfully');
+});
